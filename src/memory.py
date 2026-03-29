@@ -24,23 +24,13 @@ class UserMemory:
         else:
             self._raw = ""
 
-    def _bullet_lines(self) -> list[str]:
-        """Extract `- **key**: value` style lines from markdown for compact agent context."""
-        out: list[str] = []
+    def _extract(self, key: str) -> str:
+        """Extract the value of `- **key**: value` from the raw markdown."""
         for line in self._raw.splitlines():
-            s = line.strip()
-            if re.match(r"^-\s+\*\*[^*]+\*\*:", s):
-                out.append(s)
-        return out
-
-    def _bullet_summary(self, max_chars: int = 900) -> str:
-        parts = self._bullet_lines()
-        if not parts:
-            return ""
-        text = " ".join(parts)
-        if len(text) <= max_chars:
-            return text
-        return text[: max_chars - 3].rstrip() + "..."
+            m = re.match(rf"^-\s+\*\*{re.escape(key)}\*\*:\s*(.+)", line.strip())
+            if m:
+                return m.group(1).strip()
+        return ""
 
     def get_profile_prompt(self) -> str:
         """Append to intent parser system prompt so Claude knows the user."""
@@ -53,33 +43,47 @@ class UserMemory:
         )
 
     def get_context_for_goal(self, category: ServiceCategory) -> str:
-        """Category-specific lead-in + bullet summary from `memory.md` for Droid goals."""
-        summary = self._bullet_summary()
-        if not summary:
+        """Compact, category-relevant context for Droid agent goals.
+
+        Only includes fields the Droid agent actually needs for the given
+        category so the goal string stays short and focused.
+        """
+        if not self._raw:
             return ""
 
-        leads: dict[ServiceCategory, str] = {
+        name = self._extract("이름")
+        phone = self._extract("전화번호")
+        home = self._extract("거주지(집)")
+        work = self._extract("직장(회사)")
+        likes = self._extract("좋아하는 음식")
+        dislikes = self._extract("싫어하거나 못 먹는 음식")
+        gf_pref = self._extract("여자친구 식사 취향")
+
+        blocks: dict[ServiceCategory, str] = {
             ServiceCategory.DELIVERY: (
-                "배달 주소·음식 선호·기피 음식·동반 식사 맥락을 아래 프로필에 맞게 반영하세요. "
+                f"배달주소(기본): {home}. "
+                f"선호 음식: {likes}. 기피 음식: {dislikes}. "
+                f"여자친구 동반 시: {gf_pref}."
             ),
             ServiceCategory.MOBILITY: (
-                "출발지/목적지가 없으면 집·회사 주소를 활용하세요. 연락처는 예약/호출에 사용 가능합니다. "
+                f"집: {home}. 회사: {work}. "
+                f"이름: {name}. 전화: {phone}."
             ),
             ServiceCategory.RESERVATION: (
-                "식당 유형·기피 음식·동반자(여자친구) 취향을 반영하세요. "
+                f"선호: {likes}. 기피: {dislikes}. "
+                f"여자친구 동반 시: {gf_pref}."
             ),
             ServiceCategory.SHOPPING: (
-                "배송지·수령인 정보가 필요하면 아래 프로필을 사용하세요. "
+                f"배송지: {home}. "
+                f"이름: {name}. 전화: {phone}."
             ),
-            ServiceCategory.TRAVEL: (
-                "예약자 정보가 필요하면 아래 프로필을 사용하세요. "
-            ),
-            ServiceCategory.GIFT: (
-                "보내는 사람·연락처가 필요하면 아래 프로필을 사용하세요. "
-            ),
+            ServiceCategory.TRAVEL: f"예약자: {name}. 연락처: {phone}.",
+            ServiceCategory.GIFT: f"보내는 사람: {name}. 연락처: {phone}.",
         }
-        lead = leads.get(category, "아래 사용자 프로필을 참고하세요. ")
-        return f"[사용자 맥락] {lead}{summary}\n\n"
+        ctx = blocks.get(category)
+        if not ctx:
+            return ""
+        return f"[사용자 정보] {ctx}\n"
 
 
 user_memory = UserMemory()

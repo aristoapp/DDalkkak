@@ -19,13 +19,18 @@ class ServiceHandler(ABC):
     def build_goal(self, intent: ParsedIntent) -> str: ...
 
     def get_goal(self, intent: ParsedIntent) -> str:
-        """Handler.build_goal() is primary; TaskGoalBuilder is fallback for unhandled services."""
-        ctx = user_memory.get_context_for_goal(intent.category)
-        return f"{ctx}{self.build_goal(intent)}".strip()
+        """Use minitap_goal (Claude-generated) + safety suffix as primary.
 
-    @staticmethod
-    def get_fallback_goal(intent: ParsedIntent) -> str:
-        return TaskGoalBuilder.build_goal(intent)
+        Handler.build_goal() is only a rigid template that checks entity keys;
+        minitap_goal already contains the user's full intent in natural language
+        (e.g. "맥도날드 검색해서 주문"), so it should take precedence.
+        """
+        ctx = user_memory.get_context_for_goal(intent.category)
+        if intent.minitap_goal and intent.minitap_goal.strip():
+            core = TaskGoalBuilder.build_goal(intent)
+        else:
+            core = self.build_goal(intent)
+        return f"{ctx}{core}".strip()
 
     async def execute(self, intent: ParsedIntent) -> dict:
         goal = self.get_goal(intent)
