@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Slide Viewer</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #111;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    .viewer-container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Navigation bar */
+    .nav-bar {
+      height: 48px;
+      background: #1a1a1a;
+      border-bottom: 1px solid #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-shrink: 0;
+      z-index: 100;
+    }
+
+    .nav-bar button {
+      background: #333;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 16px;
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .nav-bar button:hover {
+      background: #555;
+    }
+
+    .nav-bar button:disabled {
+      opacity: 0.3;
+      cursor: default;
+    }
+
+    .slide-counter {
+      color: #aaa;
+      font-size: 14px;
+      font-weight: 500;
+      min-width: 60px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .btn-fullscreen {
+      position: absolute;
+      right: 16px;
+      background: transparent !important;
+      font-size: 18px;
+      padding: 6px 10px !important;
+    }
+
+    /* Slide viewport */
+    .slide-viewport {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .slide-scaler {
+      width: 720pt;
+      height: 405pt;
+      position: relative;
+      transform-origin: center center;
+    }
+
+    /* Slide frames (iframes) */
+    .slide-frame {
+      position: absolute;
+      inset: 0;
+      width: 720pt;
+      height: 405pt;
+      border: none;
+      overflow: hidden;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .slide-frame.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="viewer-container">
+    <!-- Navigation -->
+    <div class="nav-bar">
+      <button id="btn-prev" title="Previous (\u2190)">Prev</button>
+      <span class="slide-counter" id="counter">1 / 5</span>
+      <button id="btn-next" title="Next (\u2192)">Next</button>
+      <button class="btn-fullscreen" id="btn-fs" title="Fullscreen (F)">&#x26F6;</button>
+    </div>
+
+    <!-- Slide viewport -->
+    <div class="slide-viewport" id="viewport">
+      <div class="slide-scaler" id="scaler">
+        <iframe class="slide-frame active" data-slide="1" srcdoc="<!DOCTYPE html>
+<html>
+<head>
+<base href=&quot;./&quot;>
+<script>
+(() => {
+  const slideFile = &quot;slide-01.html&quot;;
+  const localAssetPrefix = &quot;./assets/&quot;;
+  const absolutePathRe = /^(file:\/\/|\/Users\/|\/home\/|\/var\/|\/tmp\/|\/private\/|\/Volumes\/|[A-Za-z]:[\\/]|\\\\)/i;
+  const prefix = '[slides-grab:image]';
+
+  function describeElement(element) {
+    if (!element || element.nodeType !== Node.ELEMENT_NODE) return '';
+    if (element === document.body) return 'body';
+
+    const parts = [];
+    let current = element;
+    while (current &amp;&amp; current.nodeType === Node.ELEMENT_NODE &amp;&amp; current !== document.body) {
+      let part = current.tagName.toLowerCase();
+      if (current.id) {
+        part += '#' + current.id;
+        parts.unshift(part);
+        break;
+      }
+      if (current.classList.length > 0) {
+        part += '.' + Array.from(current.classList).slice(0, 2).join('.');
+      }
+      parts.unshift(part);
+      current = current.parentElement;
+    }
+    return 'body > ' + parts.join(' > ');
+  }
+
+  function warn(message, detail) {
+    console.warn(prefix + ' ' + slideFile + ': ' + message, detail);
+  }
+
+  function fail(message, detail) {
+    console.error(prefix + ' ' + slideFile + ': ' + message, detail);
+  }
+
+  window.addEventListener('error', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLImageElement)) return;
+    const src = (target.getAttribute('src') || target.currentSrc || '').trim();
+    if (!src || src.startsWith('data:')) return;
+    if (src.startsWith(localAssetPrefix)) {
+      fail('missing local asset', { src });
+      return;
+    }
+    fail('image failed to load', { src });
+  }, true);
+
+  window.addEventListener('DOMContentLoaded', () => {
+    for (const image of document.querySelectorAll('img[src]')) {
+      const src = (image.getAttribute('src') || '').trim();
+      if (!src || src.startsWith('data:')) continue;
+      if (src.startsWith('https://')) {
+        fail('remote image URL is unsupported in saved slides; download it into ./assets/<file>', { src });
+        continue;
+      }
+      if (src.startsWith('http://')) {
+        fail('remote http:// image URL is unsupported in saved slides; download it into ./assets/<file>', { src });
+        continue;
+      }
+      if (absolutePathRe.test(src) || src.startsWith('/')) {
+        fail('non-portable image path is unsupported', { src });
+        continue;
+      }
+      if (!src.startsWith(localAssetPrefix)) {
+        warn('noncanonical local image path should use ./assets/<file>', { src });
+      }
+    }
+
+    for (const element of document.body.querySelectorAll('*')) {
+      if (element === document.body) continue;
+      const backgroundImage = window.getComputedStyle(element).backgroundImage;
+      if (!backgroundImage || backgroundImage === 'none' || !backgroundImage.includes('url(')) continue;
+      fail('non-body background-image is not supported for slide content', {
+        element: describeElement(element),
+        backgroundImage,
+      });
+    }
+  });
+})();
+</script>
+  <link rel=&quot;stylesheet&quot; href=&quot;https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css&quot;>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 720pt;
+      height: 405pt;
+      font-family: 'Pretendard', sans-serif;
+      background: #0A0A0A;
+      padding: 40pt 48pt;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <!-- 상단 -->
+  <div style=&quot;display: flex; justify-content: space-between; align-items: center;&quot;>
+    <div style=&quot;display: flex; align-items: center; gap: 10pt;&quot;>
+      <div style=&quot;width: 28pt; height: 28pt; background: #3B82F6; border-radius: 6pt; display: flex; align-items: center; justify-content: center;&quot;>
+        <p style=&quot;color: #ffffff; font-size: 16pt; font-weight: 700;&quot;>D</p>
+      </div>
+      <p style=&quot;font-size: 11pt; font-weight: 500; color: #888888;&quot;>RALPHTHON SEOUL 2026</p>
+    </div>
+    <p style=&quot;font-size: 10pt; color: #555555;&quot;>중간발표</p>
+  </div>
+
+  <!-- 메인 타이틀 -->
+  <div style=&quot;flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 12pt;&quot;>
+    <h1 style=&quot;font-size: 56pt; font-weight: 700; color: #ffffff; letter-spacing: -0.03em; line-height: 1.3;&quot;>딸깍<span style=&quot;color: #3B82F6;&quot;>.</span></h1>
+    <p style=&quot;font-size: 20pt; font-weight: 400; color: #888888; margin-top: 8pt;&quot;>
+      딸깍 한 번으로 주문/예약 완료
+    </p>
+  </div>
+
+  <!-- 하단 정보 -->
+  <div style=&quot;display: flex; gap: 48pt;&quot;>
+    <div>
+      <p style=&quot;font-size: 9pt; color: #555555; margin-bottom: 4pt;&quot;>Team</p>
+      <p style=&quot;font-size: 12pt; font-weight: 500; color: #ffffff;&quot;>Aristo</p>
+    </div>
+    <div>
+      <p style=&quot;font-size: 9pt; color: #555555; margin-bottom: 4pt;&quot;>Members</p>
+      <p style=&quot;font-size: 12pt; font-weight: 500; color: #ffffff;&quot;>황신혁 · Joshua Park</p>
+    </div>
+    <div>
+      <p style=&quot;font-size: 9pt; color: #555555; margin-bottom: 4pt;&quot;>GitHub</p>
+      <p style=&quot;font-size: 12pt; font-weight: 500; color: #3B82F6;&quot;>aristoapp/DDalkkak</p>
+    </div>
+  </div>
+</body>
+</html>
+" sandbox="allow-same-origin"></iframe>
+        <iframe class="slide-frame" data-slide="2" srcdoc="<!DOCTYPE html>
+<html>
+<head>
+<base href=&quot;./&quot;>
+<script>
+(() => {
+  const slideFile = &quot;slide-02.html&quot;;
+  const localAssetPrefix = &quot;./assets/&quot;;
+  const absolutePathRe = /^(file:\/\/|\/Users\/|\/home\/|\/var\/|\/tmp\/|\/private\/|\/Volumes\/|[A-Za-z]:[\\/]|\\\\)/i;
+  const prefix = '[slides-grab:image]';
+
+  function describeElement(element) {
+    if (!element || element.nodeType !== Node.ELEMENT_NODE) return '';
+    if (element === document.body) return 'body';
+
+    const parts = [];
+    let current = element;
+    while (current &amp;&amp; current.nodeType === Node.ELEMENT_NODE &amp;&amp; current !== document.body) {
+      let part = current.tagName.toLowerCase();
+      if (current.id) {
+        part += '#' + current.id;
+        parts.unshift(part);
+        break;
+      }
+      if (current.classList.length > 0) {
+        part += '.' + Array.from(current.classList).slice(0, 2).join('.');
+      }
+      parts.unshift(part);
+      current = current.parentElement;
+    }
+    return 'body > ' + parts.join(' > ');
+  }
+
+  function warn(message, detail) {
+    console.warn(prefix + ' ' + slideFile + ': ' + message, detail);
+  }
+
+  function fail(message, detail) {
+    console.error(prefix + ' ' + slideFile + ': ' + message, detail);
+  }
+
+  window.addEventListener('error', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLImageElement)) return;
+    const src = (target.getAttribute('src') || target.currentSrc || '').trim();
+    if (!src || src.startsWith('data:')) return;
+    if (src.startsWith(localAssetPrefix)) {
+      fail('missing local asset', { src });
+      return;
+    }
+    fail('image failed to load', { src });
+  }, true);
+
+  window.addEventListener('DOMContentLoaded', () => {
+    for (const image of document.querySelectorAll('img[src]')) {
+      const src = (image.getAttribute('src') || '').trim();
+      if (!src || src.startsWith('data:')) continue;
+      if (src.startsWith('https://')) {
+        fail('remote image URL is unsupported in saved slides; download it into ./assets/<file>', { src });
+        continue;
+      }
+      if (src.startsWith('http://')) {
+        fail('remote http:// image URL is unsupported in saved slides; download it into ./assets/<file>', { src });
+        continue;
+      }
+      if (absolutePathRe.test(src) || src.startsWith('/')) {
+        fail('non-portable image path is unsupported', { src });
+        continue;
+      }
+      if (!src.startsWith(localAssetPrefix)) {
+        warn('noncanonical local image path should use ./assets/<file>', { src });
+      }
+    }
+
+    for (const element of document.body.querySelectorAll('*')) {
+      if (element === document.body) continue;
+      const backgroundImage = window.getComputedStyle(element).backgroundImage;
+      if (!backgroundImage || backgroundImage === 'none' || !backgroundImage.includes('url(')) continue;
+      fail('non-body background-image is not supported for slide content', {
+        element: describeElement(element),
+        backgroundImage,
+      });
+    }
+  });
+})();
+</script>
+  <link rel=&quot;stylesheet&quot; href=&quot;https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css&quot;>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 720pt;
+      height: 405pt;
+      font-family: 'Pretendard', sans-serif;
+      background: #0A0A0A;
+      padding: 40pt 48pt;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <!-- 헤더 -->
+  <div style=&quot;display: flex; align-items: center; gap: 12pt; margin-bottom: 28pt;&quot;>
+    <p style=&quot;display: inline-block; padding: 4pt 12pt; background: #3B82F6; color: #ffffff; border-radius: 4pt; font-size: 8pt; font-weight: 700; letter-spacing: 0.05em;&quot;>PROBLEM</p>
+    <h2 style=&quot;font-size: 24pt; font-weight: 600; color: #ffffff;&quot;>한국 앱은 AI가 못 건드린다</h2>
+  </div>
+
+  <!-- 본문 -->
+  <div style=&quot;flex: 1; display: flex; gap: 32pt;&quot;>
+    <!-- 좌측: 핵심 문제 -->
+    <div style=&quot;flex: 1; display: flex; flex-direction: column; gap: 20pt;&quot;>
+      <div style=&quot;background: #161616; border-radius: 10pt; padding: 20pt; border-left: 3pt solid #3B82F6;&quot;>
+        <p style=&quot;font-size: 10pt; color: #3B82F6; font-weight: 600; margin-bottom: 8pt;&quot;>글로벌 에이전트의 한계</p>
+        <p style=&quot;font-size: 13pt; color: #cccccc; line-height: 1.6;&quot;>OpenClaw, Operator 같은 AI 에이전트는 <span style=&quot;color: #ffffff; font-weight: 600;&quot;>한국 모바일 앱에 접근할 수 없다.</span> 배민, 카카오T, 캐치테이블 — 전부 앱 전용.</p>
+      </div>
+      <div style=&quot;background: #161616; border-radius: 10pt; padding: 20pt; border-left: 3pt solid #EF4444;&quot;>
+        <p style=&quot;font-size: 10pt; color: #EF4444; font-weight: 600; margin-bottom: 8pt;&quot;>매일 반복되는 수작업</p>
+        <p style=&quot;font-size: 13pt; color: #cccccc; line-height: 1.6;&quot;>택시 호출, 배달 주문, 식당 예약 — <span style=&quot;color: #ffffff; font-weight: 600;&quot;>매일</span> 앱을 열고, 검색하고, 탭하고, 결제한다.</p>
+      </div>
+    </div>
+
+    <!-- 우측: 구체적 사례 -->
+    <div style=&quot;flex: 1; display: flex; flex-direction: column; justify-content: center;&quot;>
+      <div style=&quot;background: #161616; border-radius: 10pt; padding: 24pt;&quot;>
+        <p style=&quot;font-size: 10pt; color: #888888; font-weight: 600; margin-bottom: 12pt; letter-spacing: 0.05em;&quot;>REAL CASE</p>
+        <p style=&quot;font-size: 15pt; color: #ffffff; font-weight: 500; line-height: 1.5; margin-bottom: 16pt;&quot;>&quot;팀끼리 배달음식 시킬 때&quot;</p>
+        <ul style=&quot;list-style: none; display: flex; flex-direction: column; gap: 8pt;&quot;>
+          <li style=&quot;font-size: 12pt; color: #888888; padding-left: 16pt; position: relative;&quot;><span style=&quot;position: absolute; left: 0; color: #555555;&quot;>1.</span> 메뉴 수합</li>
+          <li style=&quot;font-size: 12pt; color: #888888; padding-left: 16pt; position: relative;&quot;><span style=&quot;position: absolute; left: 0; color: #555555;&quot;>2.</span> 앱 열기</li>
+          <li style=&quot;font-size: 12pt; color: #888888; padding-left: 16pt; position: relative;&quot;><span style=&quot;position: absolute; left: 0; color: #555555;&quot;>3.</span> 하나하나 장바구니에 담기</li>
+          <li style=&quot;font-size: 12pt; color: #ffffff; font-weight: 600; padding-left: 16pt; position: relative;&quot;><span style=&quot;position: absolute; left: 0; color: #EF4444;&quot;>4.</span> 결제까지 수작업</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+" sandbox="allow-same-origin"></iframe>
+        <iframe class="slide-frame" data-slide="3" srcdoc="<!DOCTYPE html>
+<html>
+<head>
+<base href=&quot;./&quot;>
+<script>
+(() => {
+  const slideFile = &quot;slide-03.html&quot;;
+  const localAssetPrefix = &quot;./assets/&quot;;
+  const absolutePathRe = /^(file:\/\/|\/Users\/|\/home\/|\/var\/|\/tmp\/|\/private\/|\/Volumes\/|[A-Za-z]:[\\/]|\\\\)/i;
+  const prefix = '[slides-grab:image]';
+
+  function describeElement(element) {
+    if (!element || element.nodeType !== Node.ELEMENT_NODE) return '';
+    if (element === document.body) return 'body';
+
+    const parts = [];
+    let current = element;
+    while (current &amp;&amp; current.nodeType === Node.ELEMENT_NODE &amp;&amp; current !== document.body) {
+      let part = current.tagName.toLowerCase();
+      if (current.id) {
+        part += '#' + current.id;
+        parts.unshift(part);
+        break;
+      }
+      if (current.classList.length > 0) {
+        part += '.' + Array.from(current.classList).slice(0, 2).join('.');
+      }
+      parts.unshift(part);
+      current = current.parentElement;
+    }
+    return 'body > ' + parts.join(' > ');
+  }
+
+  function warn(message, detail) {
+    console.warn(prefix + ' ' + slideFile + ': ' + message, detail);
+  }
+
+  function fail(message, detail) {
+    console.error(prefix + ' ' + slideFile + ': ' + message, detail);
+  }
+
+  window.addEventListener('error', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLImageElement)) return;
+    const src = (target.getAttribute('src') || target.currentSrc || '').trim();
+    if (!src || src.startsWith('data:')) return;
+    if (src.startsWith(localAssetPrefix)) {
+      fail('missing local asset', { src });
+      return;
+    }
+    fail('image failed to load', { src });
+  }, true);
+
+  window.addEventListener('DOMContentLoaded', () => {
+    for (const image of document.querySelectorAll('img[src]')) {
+      const src = (image.getAttribute('src') || '').trim();
+      if (!src || src.startsWith('data:')) continue;
+      if (src.startsWith('https://')) {
+        fail('remote image URL is unsupported in saved slides; download it into ./assets/<file>', { src });
+        continue;
+      }
+      if (src.startsWith('http://')) {
+        fail('remote http:// image URL is unsupported in saved slides; download it into ./assets/<file>', { src });
+        continue;
+      }
+      if (absolutePathRe.test(src) || src.startsWith('/')) {
+        fail('non-portable image path is unsupported', { src });
+        continue;
+      }
+      if (!src.startsWith(localAssetPrefix)) {
+        warn('noncanonical local image path should use ./assets/<file>', { src });
+      }
+    }
+
+    for (const element of document.body.querySelectorAll('*')) {
+      if (element === document.body) continue;
+      const backgroundImage = window.getComputedStyle(element).backgroundImage;
+      if (!backgroundImage || backgroundImage === 'none' || !backgroundImage.includes('url(')) continue;
+      fail('non-body background-image is not supported for slide content', {
+        element: describeElement(element),
+        backgroundImage,
+      });
+    }
+  });
+})();
+</script>
+  <link rel=&quot;stylesheet&quot; href=&quot;https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css&quot;>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 720pt;
+      height: 405pt;
+      font-family: 'Pretendard', sans-serif;
+      background: #0A0A0A;
+      padding: 40pt 48pt;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <!-- 헤더 -->
+  <div style=&quot;display: flex; align-items: center; gap: 12pt; margin-bottom: 28pt;&quot;>
+    <p style=&quot;display: inline-block; padding: 4pt 12pt; background: #3B82F6; color: #ffffff; border-radius: 4pt; font-size: 8pt; font-weight: 700; letter-spacing: 0.05em;&quot;>SOLUTION</p>
+    <h2 style=&quot;font-size: 24pt; font-weight: 600; color: #ffffff;&quot;>딸깍으로 에이전트에게 맡기세요</h2>
+  </div>
+
+  <!-- 핵심 흐름 -->
+  <div style=&quot;flex: 1; display: flex; flex-direction: column; gap: 24pt;&quot;>
+    <!-- 한 문장 정의 -->
+    <div style=&quot;text-align: center; padding: 16pt 0;&quot;>
+      <p style=&quot;font-size: 18pt; color: #ffffff; font-weight: 500; line-height: 1.5;&quot;>
+        자연어로 말하면 → AI가 <span style=&quot;color: #3B82F6; font-weight: 700;&quot;>실제 모바일 앱</span>을 직접 조작해서 거래를 완결
+      </p>
+    </div>
+
+    <!-- 아키텍처 플로우 -->
+    <div style=&quot;display: flex; align-items: center; justify-content: center; gap: 8pt;&quot;>
+      <div style=&quot;background: #161616; border-radius: 8pt; padding: 14pt 18pt; text-align: center;&quot;>
+        <p style=&quot;font-size: 9pt; color: #888888; margin-bottom: 4pt;&quot;>USER</p>
+        <p style=&quot;font-size: 12pt; color: #ffffff; font-weight: 500;&quot;>&quot;배달 시켜줘&quot;</p>
+      </div>
+      <p style=&quot;font-size: 16pt; color: #3B82F6;&quot;>→</p>
+      <div style=&quot;background: #161616; border-radius: 8pt; padding: 14pt 18pt; text-align: center;&quot;>
+        <p style=&quot;font-size: 9pt; color: #888888; margin-bottom: 4pt;&quot;>INTENT PARSER</p>
+        <p style=&quot;font-size: 12pt; color: #ffffff; font-weight: 500;&quot;>Claude LLM</p>
+      </div>
+      <p style=&quot;font-size: 16pt; color: #3B82F6;&quot;>→</p>
+      <div style=&quot;background: #161616; border-radius: 8pt; padding: 14pt 18pt; text-align: center;&quot;>
+        <p style=&quot;font-size: 9pt; color: #888888; margin-bottom: 4pt;&quot;>ROUTER</p>
+        <p style=&quot;font-size: 12pt; color: #ffffff; font-weight: 500;&quot;>서비스 선택</p>
+      </div>
+      <p style=&quot;font-size: 16pt; color: #3B82F6;&quot;>→</p>
+      <div style=&quot;background: #1a2744; border: 1pt solid #3B82F6; border-radius: 8pt; padding: 14pt 18pt; text-align: center;&quot;>
+        <p style=&quot;font-size: 9pt; color: #3B82F6; margin-bottom: 4pt;&quot;>ANDROID</p>
+        <p style=&quot;font-size: 12pt; color: #ffffff; font-weight: 500;&quot;>앱 자동 제어</p>
+      </div>
+    </div>
+
+    <!-- 차별점 -->
+    <div style=&quot;display: flex; gap: 20pt; margin-top: auto;&quot;>
+      <div style=&quot;flex: 1; background: #161616; border-radius: 8pt; padding: 16pt;&quot;>
+        <p style=&quot;font-size: 10pt; color: #3B82F6; font-weight: 600; margin-bottom: 6pt;&quot;>차별점</p>
+        <p style=&quot;font-size: 12pt; color: #cccccc; line-height: 1.5;&quot;>브라우저가 아닌 <span style=&quot;color: #ffffff; font-weight: 600;&quot;>실제 모바일 앱</span> 직접 제어. 한국 서비스 대부분이 모바일 전용인 문제를 정면 돌파.</p>
+      </div>
+      <div style=&quot;flex: 1; background: #161616; border-radius: 8pt; padding: 16pt;&quot;>
+        <p style=&quot;font-size: 10pt; color: #3B82F6; font-weight: 600; margin-bottom: 6pt;&quot;>핵심 스택</p>
+        <p style=&quot;font-size: 12pt; color: #cccccc; line-height: 1.5;&quot;>Python + <span style=&quot;color: #ffffff; font-weight: 600;&quot;>Droidrun SDK</span> + Android Emulator + ADB로 실기기/에뮬레이터 모두 지원.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+" sandbox="allow-same-origin"></iframe>
+        <iframe class="slide-frame" data-slide="4" srcdoc="<!DOCTYPE html>
+<html>
+<head>
+<base href=&quot;./&quot;>
+<script>
+(() => {
+  const slideFile = &quot;slide-04.html&quot;;
+  const localAssetPrefix = &quot;./assets/&quot;;
+  const absolutePathRe = /^(file:\/\/|\/Users\/|\/home\/|\/var\/|\/tmp\/|\/private\/|\/Volumes\/|[A-Za-z]:[\\/]|\\\\)/i;
+  const prefix = '[slides-grab:image]';
+
+  function describeElement(element) {
+    if (!element || element.nodeType !== Node.ELEMENT_NODE) return '';
+    if (element === document.body) return 'body';
+
+    const parts = [];
+    let current = element;
+    while (current &amp;&amp; current.nodeType === Node.ELEMENT_NODE &amp;&amp; current !== document.body) {
+      let part = current.tagName.toLowerCase();
+      if (current.id) {
+        part += '#' + current.id;
+        parts.unshift(part);
+        break;
+      }
+      if (current.classList.length > 0) {
+        part += '.' + Array.from(current.classList).slice(0, 2).join('.');
+      }
+      parts.unshift(part);
+      current = current.parentElement;
+    }
+    return 'body > ' + parts.join(' > ');
+  }
+
+  function warn(message, detail) {
+    console.warn(prefix + ' ' + slideFile + ': ' + message, detail);
+  }
+
+  function fail(message, detail) {
+    console.error(prefix + ' ' + slideFile + ': ' + message, detail);
+  }
+
+  window.addEventListener('error', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLImageElement)) return;
+    const src = (target.getAttribute('src') || target.currentSrc || '').trim();
+    if (!src || src.startsWith('data:')) return;
+    if (src.startsWith(localAssetPrefix)) {
+      fail('missing local asset', { src });
+      return;
+    }
+    fail('image failed to load', { src });
+  }, true);
+
+  window.addEventListener('DOMContentLoaded', () => {
+    for (const image of document.querySelectorAll('img[src]')) {
+      const src = (image.getAttribute('src') || '').trim();
+      if (!src || src.startsWith('data:')) continue;
+      if (src.startsWith('https://')) {
+        fail('remote image URL is unsupported in saved slides; download it into ./assets/<file>', { src });
+        continue;
+      }
+      if (src.startsWith('http://')) {
+        fail('remote http:// image URL is unsupported in saved slides; download it into ./assets/<file>', { src });
+        continue;
+      }
+      if (absolutePathRe.test(src) || src.startsWith('/')) {
+        fail('non-portable image path is unsupported', { src });
+        continue;
+      }
+      if (!src.startsWith(localAssetPrefix)) {
+        warn('noncanonical local image path should use ./assets/<file>', { src });
+      }
+    }
+
+    for (const element of document.body.querySelectorAll('*')) {
+      if (element === document.body) continue;
+      const backgroundImage = window.getComputedStyle(element).backgroundImage;
+      if (!backgroundImage || backgroundImage === 'none' || !backgroundImage.includes('url(')) continue;
+      fail('non-body background-image is not supported for slide content', {
+        element: describeElement(element),
+        backgroundImage,
+      });
+    }
+  });
+})();
+</script>
+  <link rel=&quot;stylesheet&quot; href=&quot;https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css&quot;>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 720pt;
+      height: 405pt;
+      font-family: 'Pretendard', sans-serif;
+      background: #0A0A0A;
+      padding: 40pt 48pt;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <!-- 헤더 -->
+  <div style=&quot;display: flex; align-items: center; gap: 12pt; margin-bottom: 32pt;&quot;>
+    <p style=&quot;display: inline-block; padding: 4pt 12pt; background: #3B82F6; color: #ffffff; border-radius: 4pt; font-size: 8pt; font-weight: 700; letter-spacing: 0.05em;&quot;>DEMO</p>
+    <h2 style=&quot;font-size: 24pt; font-weight: 600; color: #ffffff;&quot;>실제 시연 — 2개 시나리오</h2>
+  </div>
+
+  <!-- 2개 데모 카드 -->
+  <div style=&quot;flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 24pt;&quot;>
+    <!-- 캐치테이블 -->
+    <div style=&quot;background: #161616; border-radius: 10pt; padding: 28pt; display: flex; flex-direction: column; justify-content: space-between; border-top: 3pt solid #F59E0B;&quot;>
+      <div>
+        <p style=&quot;font-size: 32pt; margin-bottom: 14pt;&quot;>🍽️</p>
+        <h3 style=&quot;font-size: 20pt; font-weight: 600; color: #ffffff; margin-bottom: 10pt;&quot;>캐치테이블</h3>
+        <p style=&quot;font-size: 13pt; color: #888888; line-height: 1.7;&quot;>식당 검색 → 예약 → 확인 → 취소까지 AI 에이전트가 앱 내에서 자동 수행</p>
+      </div>
+    </div>
+
+    <!-- 배달의민족 -->
+    <div style=&quot;background: #161616; border-radius: 10pt; padding: 28pt; display: flex; flex-direction: column; justify-content: space-between; border-top: 3pt solid #10B981;&quot;>
+      <div>
+        <p style=&quot;font-size: 32pt; margin-bottom: 14pt;&quot;>🍔</p>
+        <h3 style=&quot;font-size: 20pt; font-weight: 600; color: #ffffff; margin-bottom: 10pt;&quot;>배달의민족</h3>
+        <p style=&quot;font-size: 13pt; color: #888888; line-height: 1.7;&quot;>음식 선택 → 장바구니 → 주문 → 취소까지 AI 에이전트가 앱 내에서 자동 수행</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 하단 노트 -->
+  <div style=&quot;margin-top: 16pt;&quot;>
+    <p style=&quot;font-size: 10pt; color: #555555;&quot;>모든 시나리오는 실제 앱에서 AI 에이전트가 자율적으로 수행한 영상입니다.</p>
+  </div>
+</body>
+</html>
+" sandbox="allow-same-origin"></iframe>
+        <iframe class="slide-frame" data-slide="5" srcdoc="<!DOCTYPE html>
+<html>
+<head>
+<base href=&quot;./&quot;>
+<script>
+(() => {
+  const slideFile = &quot;slide-05.html&quot;;
+  const localAssetPrefix = &quot;./assets/&quot;;
+  const absolutePathRe = /^(file:\/\/|\/Users\/|\/home\/|\/var\/|\/tmp\/|\/private\/|\/Volumes\/|[A-Za-z]:[\\/]|\\\\)/i;
+  const prefix = '[slides-grab:image]';
+
+  function describeElement(element) {
+    if (!element || element.nodeType !== Node.ELEMENT_NODE) return '';
+    if (element === document.body) return 'body';
+
+    const parts = [];
+    let current = element;
+    while (current &amp;&amp; current.nodeType === Node.ELEMENT_NODE &amp;&amp; current !== document.body) {
+      let part = current.tagName.toLowerCase();
+      if (current.id) {
+        part += '#' + current.id;
+        parts.unshift(part);
+        break;
+      }
+      if (current.classList.length > 0) {
+        part += '.' + Array.from(current.classList).slice(0, 2).join('.');
+      }
+      parts.unshift(part);
+      current = current.parentElement;
+    }
+    return 'body > ' + parts.join(' > ');
+  }
+
+  function warn(message, detail) {
+    console.warn(prefix + ' ' + slideFile + ': ' + message, detail);
+  }
+
+  function fail(message, detail) {
+    console.error(prefix + ' ' + slideFile + ': ' + message, detail);
+  }
+
+  window.addEventListener('error', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLImageElement)) return;
+    const src = (target.getAttribute('src') || target.currentSrc || '').trim();
+    if (!src || src.startsWith('data:')) return;
+    if (src.startsWith(localAssetPrefix)) {
+      fail('missing local asset', { src });
+      return;
+    }
+    fail('image failed to load', { src });
+  }, true);
+
+  window.addEventListener('DOMContentLoaded', () => {
+    for (const image of document.querySelectorAll('img[src]')) {
+      const src = (image.getAttribute('src') || '').trim();
+      if (!src || src.startsWith('data:')) continue;
+      if (src.startsWith('https://')) {
+        fail('remote image URL is unsupported in saved slides; download it into ./assets/<file>', { src });
+        continue;
+      }
+      if (src.startsWith('http://')) {
+        fail('remote http:// image URL is unsupported in saved slides; download it into ./assets/<file>', { src });
+        continue;
+      }
+      if (absolutePathRe.test(src) || src.startsWith('/')) {
+        fail('non-portable image path is unsupported', { src });
+        continue;
+      }
+      if (!src.startsWith(localAssetPrefix)) {
+        warn('noncanonical local image path should use ./assets/<file>', { src });
+      }
+    }
+
+    for (const element of document.body.querySelectorAll('*')) {
+      if (element === document.body) continue;
+      const backgroundImage = window.getComputedStyle(element).backgroundImage;
+      if (!backgroundImage || backgroundImage === 'none' || !backgroundImage.includes('url(')) continue;
+      fail('non-body background-image is not supported for slide content', {
+        element: describeElement(element),
+        backgroundImage,
+      });
+    }
+  });
+})();
+</script>
+  <link rel=&quot;stylesheet&quot; href=&quot;https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css&quot;>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 720pt;
+      height: 405pt;
+      font-family: 'Pretendard', sans-serif;
+      background: #0A0A0A;
+      padding: 40pt 48pt;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <!-- 헤더 -->
+  <div style=&quot;display: flex; align-items: center; gap: 12pt; margin-bottom: 28pt;&quot;>
+    <p style=&quot;display: inline-block; padding: 4pt 12pt; background: #EF4444; color: #ffffff; border-radius: 4pt; font-size: 8pt; font-weight: 700; letter-spacing: 0.05em;&quot;>PIVOT</p>
+    <h2 style=&quot;font-size: 24pt; font-weight: 600; color: #ffffff;&quot;>시행착오</h2>
+  </div>
+
+  <!-- 타임라인 -->
+  <div style=&quot;flex: 1; display: flex; gap: 20pt;&quot;>
+    <!-- Before: Minitap -->
+    <div style=&quot;flex: 1; display: flex; flex-direction: column; gap: 16pt;&quot;>
+      <div style=&quot;background: #1a1111; border: 1pt solid #EF4444; border-radius: 10pt; padding: 22pt; flex: 1;&quot;>
+        <p style=&quot;font-size: 10pt; color: #EF4444; font-weight: 600; margin-bottom: 10pt; letter-spacing: 0.05em;&quot;>PLAN A — 원래 계획</p>
+        <h3 style=&quot;font-size: 17pt; font-weight: 600; color: #ffffff; margin-bottom: 10pt;&quot;>Minitap SDK + 실제 iPhone</h3>
+        <p style=&quot;font-size: 12pt; color: #888888; line-height: 1.6; margin-bottom: 12pt;&quot;>물리적 iOS 기기를 USB + WDA로 연결해서 앱을 직접 제어하는 구조</p>
+        <ul style=&quot;list-style: none; display: flex; flex-direction: column; gap: 6pt;&quot;>
+          <li style=&quot;font-size: 11pt; color: #EF4444;&quot;>
+            <span style=&quot;font-weight: 600;&quot;>✕</span> <span style=&quot;color: #888888;&quot;>SDK 자체에 안정성 문제 발견</span>
+          </li>
+          <li style=&quot;font-size: 11pt; color: #EF4444;&quot;>
+            <span style=&quot;font-weight: 600;&quot;>✕</span> <span style=&quot;color: #888888;&quot;>기기 연결 불안정, 세션 끊김 반복</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 화살표 -->
+    <div style=&quot;display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 40pt;&quot;>
+      <p style=&quot;font-size: 24pt; color: #3B82F6; font-weight: 700;&quot;>→</p>
+    </div>
+
+    <!-- After: Droidrun -->
+    <div style=&quot;flex: 1; display: flex; flex-direction: column; gap: 16pt;&quot;>
+      <div style=&quot;background: #0f1a2e; border: 1pt solid #3B82F6; border-radius: 10pt; padding: 22pt; flex: 1;&quot;>
+        <p style=&quot;font-size: 10pt; color: #3B82F6; font-weight: 600; margin-bottom: 10pt; letter-spacing: 0.05em;&quot;>PLAN B — 1시간 전 전환</p>
+        <h3 style=&quot;font-size: 17pt; font-weight: 600; color: #ffffff; margin-bottom: 10pt;&quot;>Droidrun SDK + Android Emulator</h3>
+        <p style=&quot;font-size: 12pt; color: #888888; line-height: 1.6; margin-bottom: 12pt;&quot;>Android 에뮬레이터/실기기를 ADB로 연결, Droidrun Agent가 UI를 자율 제어</p>
+        <ul style=&quot;list-style: none; display: flex; flex-direction: column; gap: 6pt;&quot;>
+          <li style=&quot;font-size: 11pt; color: #10B981;&quot;>
+            <span style=&quot;font-weight: 600;&quot;>✓</span> <span style=&quot;color: #888888;&quot;>안정적 연결, 빠른 프로토타이핑</span>
+          </li>
+          <li style=&quot;font-size: 11pt; color: #10B981;&quot;>
+            <span style=&quot;font-weight: 600;&quot;>✓</span> <span style=&quot;color: #888888;&quot;>캐치테이블 예약 E2E 검증 완료</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 하단 교훈 -->
+  <div style=&quot;margin-top: 16pt; background: #161616; border-radius: 8pt; padding: 14pt 20pt;&quot;>
+    <p style=&quot;font-size: 12pt; color: #cccccc; line-height: 1.5;&quot;>
+      <span style=&quot;color: #3B82F6; font-weight: 600;&quot;>교훈:</span> 플랫폼에 종속되지 않는 자동화 레이어가 핵심. iOS → Android 전환에도 인텐트 파싱/라우팅 로직은 그대로 재사용.
+    </p>
+  </div>
+</body>
+</html>
+" sandbox="allow-same-origin"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const TOTAL = 5;
+    let current = 1;
+
+    const frames = document.querySelectorAll('.slide-frame');
+    const counter = document.getElementById('counter');
+    const btnPrev = document.getElementById('btn-prev');
+    const btnNext = document.getElementById('btn-next');
+    const scaler = document.getElementById('scaler');
+    const viewport = document.getElementById('viewport');
+
+    function goTo(n) {
+      n = Math.max(1, Math.min(TOTAL, n));
+      if (n === current) return;
+      frames[current - 1].classList.remove('active');
+      current = n;
+      frames[current - 1].classList.add('active');
+      counter.textContent = current + ' / ' + TOTAL;
+      btnPrev.disabled = current === 1;
+      btnNext.disabled = current === TOTAL;
+    }
+
+    function next() { goTo(current + 1); }
+    function prev() { goTo(current - 1); }
+
+    btnPrev.addEventListener('click', prev);
+    btnNext.addEventListener('click', next);
+    btnPrev.disabled = true;
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); next(); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); }
+      else if (e.key === 'Home') { e.preventDefault(); goTo(1); }
+      else if (e.key === 'End') { e.preventDefault(); goTo(TOTAL); }
+      else if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
+        toggleFullscreen();
+      }
+    });
+
+    // Fullscreen
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen();
+      }
+    }
+    document.getElementById('btn-fs').addEventListener('click', toggleFullscreen);
+
+    // Auto-scale to fit viewport (95% fit)
+    function rescale() {
+      const vw = viewport.clientWidth;
+      const vh = viewport.clientHeight;
+      const slideW = scaler.offsetWidth;
+      const slideH = scaler.offsetHeight;
+      const scale = Math.min(vw / slideW, vh / slideH) * 0.95;
+      scaler.style.transform = 'scale(' + scale + ')';
+    }
+
+    window.addEventListener('resize', rescale);
+    document.addEventListener('fullscreenchange', () => setTimeout(rescale, 100));
+    rescale();
+  </script>
+</body>
+</html>
