@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 
-from src.agent.appium_agent import AppiumAgent
+from src.agent.droid_agent import DroidRunAgent
 from src.cli.app import CLIApp
 from src.intent.parser import IntentParser
 from src.router.router import ServiceRouter
@@ -22,16 +22,16 @@ logger = logging.getLogger("ddalkkak")
 
 
 async def run() -> None:
-    agent = AppiumAgent()
+    agent = DroidRunAgent()
     parser = IntentParser()
     router = ServiceRouter()
 
-    logger.info("Initializing Appium agent...")
+    logger.info("Initializing Droidrun agent (Android)...")
     ok = await agent.initialize()
     if not ok:
-        logger.error("Appium agent initialization failed!")
-        raise RuntimeError("Failed to initialize Appium agent")
-    logger.info("Appium agent initialized")
+        logger.error("Droidrun agent initialization failed!")
+        raise RuntimeError("Failed to initialize Droidrun agent")
+    logger.info("Droidrun agent initialized")
 
     handlers = {
         "coupang": CoupangHandler(agent),

@@ -6,7 +6,8 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "anthropic>=0.40.0",
-    "appium-python-client>=4.0",
+    "droidrun[anthropic]>=0.5.0",
+    "retry2>=0.9.5",
     "pydantic>=2.0",
     "pydantic-settings>=2.0",
     "python-dotenv>=1.0",

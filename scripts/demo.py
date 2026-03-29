@@ -28,10 +28,10 @@ async def main() -> None:
     for user_input in DEMO_INPUTS:
         print(f"\n💬 Input: {user_input}")
         intent = await parser.parse(user_input)
-        app_key, bundle_id, display_name = router.route(intent)
+        app_key, package_name, display_name = router.route(intent)
         print(f"   Category: {intent.category.value}")
         print(f"   Action: {intent.action.value}")
-        print(f"   App: {display_name} ({bundle_id})")
+        print(f"   App: {display_name} ({package_name})")
         print(f"   Confidence: {intent.confidence}")
         print(f"   Goal: {intent.minitap_goal[:80]}...")
 

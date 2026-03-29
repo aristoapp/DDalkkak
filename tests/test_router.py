@@ -34,9 +34,9 @@ def _make_intent(category: ServiceCategory, **kwargs) -> ParsedIntent:
 )
 def test_default_routing(router: ServiceRouter, category: ServiceCategory, expected_key: str) -> None:
     intent = _make_intent(category)
-    app_key, bundle_id, name = router.route(intent)
+    app_key, package_name, name = router.route(intent)
     assert app_key == expected_key
-    assert bundle_id
+    assert package_name
     assert name
 
 

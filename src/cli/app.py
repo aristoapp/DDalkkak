@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from src.agent.appium_agent import AppiumAgent
+from src.agent.droid_agent import DroidRunAgent
 from src.intent.parser import IntentParser
 from src.router.router import ServiceRouter
 from src.services.base import ServiceHandler
@@ -12,7 +12,7 @@ class CLIApp:
         self,
         parser: IntentParser,
         router: ServiceRouter,
-        agent: AppiumAgent,
+        agent: DroidRunAgent,
         handlers: dict[str, ServiceHandler],
     ) -> None:
         self.parser = parser
@@ -65,11 +65,11 @@ class CLIApp:
                 self.conversation.add_message(self.user_id, "assistant", intent.clarification_question or "")
                 continue
 
-            app_key, bundle_id, display_name = self.router.route(intent)
+            app_key, package_name, display_name = self.router.route(intent)
             print(f"📱 {display_name}에서 처리합니다...")
             print(f"   카테고리: {intent.category.value}")
             print(f"   액션: {intent.action.value}")
-            print(f"   앱: {display_name} ({bundle_id})")
+            print(f"   앱: {display_name} ({package_name})")
 
             handler = self.handlers.get(app_key)
             if not handler:

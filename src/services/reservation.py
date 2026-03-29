@@ -6,8 +6,8 @@ from src.services.base import ServiceHandler
 
 
 class CatchtableHandler(ServiceHandler):
-    def get_bundle_id(self) -> str:
-        return settings.catchtable_bundle_id
+    def get_package_name(self) -> str:
+        return settings.catchtable_package
 
     def build_goal(self, intent: ParsedIntent) -> str:
         entities = intent.entities
@@ -33,8 +33,8 @@ class CatchtableHandler(ServiceHandler):
 
 
 class NaverReservationHandler(ServiceHandler):
-    def get_bundle_id(self) -> str:
-        return settings.naver_bundle_id
+    def get_package_name(self) -> str:
+        return settings.naver_package
 
     def build_goal(self, intent: ParsedIntent) -> str:
         entities = intent.entities

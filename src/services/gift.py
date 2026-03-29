@@ -6,8 +6,8 @@ from src.services.base import ServiceHandler
 
 
 class KakaoGiftHandler(ServiceHandler):
-    def get_bundle_id(self) -> str:
-        return settings.kakao_bundle_id
+    def get_package_name(self) -> str:
+        return settings.kakao_package
 
     def build_goal(self, intent: ParsedIntent) -> str:
         entities = intent.entities

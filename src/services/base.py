@@ -2,17 +2,17 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from src.agent.appium_agent import AppiumAgent
+from src.agent.droid_agent import DroidRunAgent
 from src.agent.task_builder import TaskGoalBuilder
 from src.intent.schemas import ParsedIntent
 
 
 class ServiceHandler(ABC):
-    def __init__(self, agent: AppiumAgent) -> None:
+    def __init__(self, agent: DroidRunAgent) -> None:
         self.agent = agent
 
     @abstractmethod
-    def get_bundle_id(self) -> str: ...
+    def get_package_name(self) -> str: ...
 
     @abstractmethod
     def build_goal(self, intent: ParsedIntent) -> str: ...
@@ -27,9 +27,9 @@ class ServiceHandler(ABC):
 
     async def execute(self, intent: ParsedIntent) -> dict:
         goal = self.get_goal(intent)
-        bundle_id = self.get_bundle_id()
+        package_name = self.get_package_name()
 
-        result = await self.agent.execute_task(goal=goal, bundle_id=bundle_id)
+        result = await self.agent.execute_task(goal=goal, package_name=package_name)
 
         screenshot_path = await self.agent.take_screenshot()
         result["screenshot"] = screenshot_path

@@ -1,26 +1,30 @@
+from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
+    model_config = ConfigDict(env_file=".env", extra="ignore")
     anthropic_api_key: str
 
-    coupang_bundle_id: str = "com.coupang.Coupang"
-    baemin_bundle_id: str = "com.jawebs.baedal"
-    coupang_eats_bundle_id: str = "com.coupang.coupang-eats"
-    kakaot_bundle_id: str = "com.kakao.taxi"
-    naver_bundle_id: str = "com.nhncorp.NaverSearch"
-    yanolja_bundle_id: str = "com.yanolja.motel"
-    catchtable_bundle_id: str = "co.catchtable.m"
-    kakao_bundle_id: str = "com.iwilab.KakaoTalk"
+    # Android package names (Play Store / adb package names)
+    coupang_package: str = "com.coupang.mobile"
+    baemin_package: str = "com.baemin"
+    coupang_eats_package: str = "com.coupang.coupangeats"
+    kakaot_package: str = "com.kakao.taxi"
+    naver_package: str = "com.nhn.android.search"
+    yanolja_package: str = "com.yanolja.local"
+    catchtable_package: str = "co.catchtable.catchtable"
+    kakao_package: str = "com.kakao.talk"
 
-    device_udid: str = "00008120-00064DE22ED1A01E"
-    appium_host: str = "http://127.0.0.1:4723"
-    appium_max_steps: int = 30
-    appium_step_interval: float = 1.0
-
-    class Config:
-        env_file = ".env"
-        extra = "ignore"
+    # Droidrun / device
+    device_serial: str = "emulator-5554"
+    max_steps: int = 30
+    vision_enabled: bool = True
+    reasoning_enabled: bool = False
+    save_trajectory: str = "step"
+    trajectory_path: str = "trajectories"
+    device_use_tcp: bool = False
+    droidrun_anthropic_model: str = "claude-sonnet-4-20250514"
 
 
 settings = Settings()

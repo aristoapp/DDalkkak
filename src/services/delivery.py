@@ -6,8 +6,8 @@ from src.services.base import ServiceHandler
 
 
 class BaeminHandler(ServiceHandler):
-    def get_bundle_id(self) -> str:
-        return settings.baemin_bundle_id
+    def get_package_name(self) -> str:
+        return settings.baemin_package
 
     def build_goal(self, intent: ParsedIntent) -> str:
         entities = intent.entities
@@ -30,8 +30,8 @@ class BaeminHandler(ServiceHandler):
 
 
 class CoupangEatsHandler(ServiceHandler):
-    def get_bundle_id(self) -> str:
-        return settings.coupang_eats_bundle_id
+    def get_package_name(self) -> str:
+        return settings.coupang_eats_package
 
     def build_goal(self, intent: ParsedIntent) -> str:
         entities = intent.entities

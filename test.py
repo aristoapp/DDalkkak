@@ -1,16 +1,24 @@
+"""Quick Droidrun Portal + ADB connectivity check. Run: uv run python test.py"""
+
+from __future__ import annotations
+
 import asyncio
-from minitap.mobile_use.sdk import Agent
+
+from droidrun.tools import AndroidDriver
+
+from src.config import settings
 
 
-async def test():
-    agent = Agent()
-    ok = await agent.init()
-    print(f"Agent initialized: {ok}")
-    screenshot = await agent.get_screenshot()
-    screenshot.save("test_screenshot.png")
-    print("Screenshot saved to test_screenshot.png")
-    await agent.clean()
-    print("Agent cleaned up")
+async def main() -> None:
+    driver = AndroidDriver(serial=settings.device_serial, use_tcp=settings.device_use_tcp)
+    await driver.connect()
+    print(f"Connected to device: {settings.device_serial}")
+    png = await driver.screenshot()
+    out = "test_screenshot.png"
+    with open(out, "wb") as f:
+        f.write(png)
+    print(f"Screenshot saved to {out}")
 
 
-asyncio.run(test())
+if __name__ == "__main__":
+    asyncio.run(main())

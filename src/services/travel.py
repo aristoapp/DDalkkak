@@ -6,8 +6,8 @@ from src.services.base import ServiceHandler
 
 
 class YanoljaHandler(ServiceHandler):
-    def get_bundle_id(self) -> str:
-        return settings.yanolja_bundle_id
+    def get_package_name(self) -> str:
+        return settings.yanolja_package
 
     def build_goal(self, intent: ParsedIntent) -> str:
         entities = intent.entities
