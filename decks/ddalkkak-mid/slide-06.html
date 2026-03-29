@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 720pt;
+      height: 405pt;
+      font-family: 'Pretendard', sans-serif;
+      background: #0A0A0A;
+      padding: 40pt 48pt;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <!-- 헤더 -->
+  <div style="display: flex; align-items: center; gap: 12pt; margin-bottom: 28pt;">
+    <p style="display: inline-block; padding: 4pt 12pt; background: #EF4444; color: #ffffff; border-radius: 4pt; font-size: 8pt; font-weight: 700; letter-spacing: 0.05em;">PIVOT</p>
+    <h2 style="font-size: 24pt; font-weight: 600; color: #ffffff;">시행착오</h2>
+  </div>
+
+  <!-- 타임라인 -->
+  <div style="flex: 1; display: flex; gap: 20pt;">
+    <!-- Before: Minitap -->
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 16pt;">
+      <div style="background: #1a1111; border: 1pt solid #EF4444; border-radius: 10pt; padding: 22pt; flex: 1;">
+        <p style="font-size: 10pt; color: #EF4444; font-weight: 600; margin-bottom: 10pt; letter-spacing: 0.05em;">PLAN A — 원래 계획</p>
+        <h3 style="font-size: 17pt; font-weight: 600; color: #ffffff; margin-bottom: 10pt;">Minitap SDK + 실제 iPhone</h3>
+        <p style="font-size: 12pt; color: #888888; line-height: 1.6; margin-bottom: 12pt;">물리적 iOS 기기를 USB + WDA로 연결해서 앱을 직접 제어하는 구조</p>
+        <ul style="list-style: none; display: flex; flex-direction: column; gap: 6pt;">
+          <li style="font-size: 11pt; color: #EF4444;">
+            <span style="font-weight: 600;">✕</span> <span style="color: #888888;">SDK 자체에 안정성 문제 발견</span>
+          </li>
+          <li style="font-size: 11pt; color: #EF4444;">
+            <span style="font-weight: 600;">✕</span> <span style="color: #888888;">기기 연결 불안정, 세션 끊김 반복</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 화살표 -->
+    <div style="display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 40pt;">
+      <p style="font-size: 24pt; color: #3B82F6; font-weight: 700;">→</p>
+    </div>
+
+    <!-- After: Droidrun -->
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 16pt;">
+      <div style="background: #0f1a2e; border: 1pt solid #3B82F6; border-radius: 10pt; padding: 22pt; flex: 1;">
+        <p style="font-size: 10pt; color: #3B82F6; font-weight: 600; margin-bottom: 10pt; letter-spacing: 0.05em;">PLAN B — 1시간 전 전환</p>
+        <h3 style="font-size: 17pt; font-weight: 600; color: #ffffff; margin-bottom: 10pt;">Droidrun SDK + Android Emulator</h3>
+        <p style="font-size: 12pt; color: #888888; line-height: 1.6; margin-bottom: 12pt;">Android 에뮬레이터/실기기를 ADB로 연결, Droidrun Agent가 UI를 자율 제어</p>
+        <ul style="list-style: none; display: flex; flex-direction: column; gap: 6pt;">
+          <li style="font-size: 11pt; color: #10B981;">
+            <span style="font-weight: 600;">✓</span> <span style="color: #888888;">안정적 연결, 빠른 프로토타이핑</span>
+          </li>
+          <li style="font-size: 11pt; color: #10B981;">
+            <span style="font-weight: 600;">✓</span> <span style="color: #888888;">캐치테이블 예약 E2E 검증 완료</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 하단 교훈 -->
+  <div style="margin-top: 16pt; background: #161616; border-radius: 8pt; padding: 14pt 20pt;">
+    <p style="font-size: 12pt; color: #cccccc; line-height: 1.5;">
+      <span style="color: #3B82F6; font-weight: 600;">교훈:</span> 플랫폼에 종속되지 않는 자동화 레이어가 핵심. iOS → Android 전환에도 인텐트 파싱/라우팅 로직은 그대로 재사용.
+    </p>
+  </div>
+</body>
+</html>

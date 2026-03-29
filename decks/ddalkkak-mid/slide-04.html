@@ -9,7 +9,7 @@
       height: 405pt;
       font-family: 'Pretendard', sans-serif;
       background: #0A0A0A;
-      padding: 40pt 48pt;
+      padding: 36pt 48pt;
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -18,35 +18,59 @@
 </head>
 <body>
   <!-- 헤더 -->
-  <div style="display: flex; align-items: center; gap: 12pt; margin-bottom: 32pt;">
-    <p style="display: inline-block; padding: 4pt 12pt; background: #3B82F6; color: #ffffff; border-radius: 4pt; font-size: 8pt; font-weight: 700; letter-spacing: 0.05em;">DEMO</p>
-    <h2 style="font-size: 24pt; font-weight: 600; color: #ffffff;">실제 시연 — 2개 시나리오</h2>
+  <div style="display: flex; align-items: center; gap: 12pt; margin-bottom: 24pt;">
+    <p style="display: inline-block; padding: 4pt 12pt; background: #3B82F6; color: #ffffff; border-radius: 4pt; font-size: 8pt; font-weight: 700; letter-spacing: 0.05em;">USE CASES</p>
+    <h2 style="font-size: 22pt; font-weight: 600; color: #ffffff;">6개 카테고리, 11개 서비스 라우팅</h2>
   </div>
 
-  <!-- 2개 데모 카드 -->
-  <div style="flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 24pt;">
-    <!-- 캐치테이블 -->
-    <div style="background: #161616; border-radius: 10pt; padding: 28pt; display: flex; flex-direction: column; justify-content: space-between; border-top: 3pt solid #F59E0B;">
-      <div>
-        <p style="font-size: 32pt; margin-bottom: 14pt;">🍽️</p>
-        <h3 style="font-size: 20pt; font-weight: 600; color: #ffffff; margin-bottom: 10pt;">캐치테이블</h3>
-        <p style="font-size: 13pt; color: #888888; line-height: 1.7;">식당 검색 → 예약 → 확인 → 취소까지 AI 에이전트가 앱 내에서 자동 수행</p>
-      </div>
+  <!-- 유즈케이스 그리드 -->
+  <div style="flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr 1fr; gap: 12pt;">
+    <!-- 쇼핑 -->
+    <div style="background: #161616; border-radius: 8pt; padding: 16pt;">
+      <p style="font-size: 10pt; color: #3B82F6; font-weight: 600; margin-bottom: 8pt;">🛒 쇼핑</p>
+      <p style="font-size: 12pt; color: #ffffff; font-weight: 500; margin-bottom: 4pt;">"샴푸 주문해줘"</p>
+      <p style="font-size: 10pt; color: #666666;">쿠팡 · 네이버쇼핑</p>
     </div>
 
-    <!-- 배달의민족 -->
-    <div style="background: #161616; border-radius: 10pt; padding: 28pt; display: flex; flex-direction: column; justify-content: space-between; border-top: 3pt solid #10B981;">
-      <div>
-        <p style="font-size: 32pt; margin-bottom: 14pt;">🍔</p>
-        <h3 style="font-size: 20pt; font-weight: 600; color: #ffffff; margin-bottom: 10pt;">배달의민족</h3>
-        <p style="font-size: 13pt; color: #888888; line-height: 1.7;">음식 선택 → 장바구니 → 주문 → 취소까지 AI 에이전트가 앱 내에서 자동 수행</p>
-      </div>
+    <!-- 배달 -->
+    <div style="background: #161616; border-radius: 8pt; padding: 16pt;">
+      <p style="font-size: 10pt; color: #10B981; font-weight: 600; margin-bottom: 8pt;">🍔 배달</p>
+      <p style="font-size: 12pt; color: #ffffff; font-weight: 500; margin-bottom: 4pt;">"저녁 배달시켜줘"</p>
+      <p style="font-size: 10pt; color: #666666;">배달의민족 · 쿠팡이츠</p>
+    </div>
+
+    <!-- 모빌리티 -->
+    <div style="background: #161616; border-radius: 8pt; padding: 16pt;">
+      <p style="font-size: 10pt; color: #8B5CF6; font-weight: 600; margin-bottom: 8pt;">🚕 모빌리티</p>
+      <p style="font-size: 12pt; color: #ffffff; font-weight: 500; margin-bottom: 4pt;">"택시 잡아줘"</p>
+      <p style="font-size: 10pt; color: #666666;">카카오T</p>
+    </div>
+
+    <!-- 여행 -->
+    <div style="background: #161616; border-radius: 8pt; padding: 16pt;">
+      <p style="font-size: 10pt; color: #F59E0B; font-weight: 600; margin-bottom: 8pt;">✈️ 여행</p>
+      <p style="font-size: 12pt; color: #ffffff; font-weight: 500; margin-bottom: 4pt;">"제주도 숙소 예약해줘"</p>
+      <p style="font-size: 10pt; color: #666666;">야놀자 · 여기어때 · 네이버</p>
+    </div>
+
+    <!-- 예약 -->
+    <div style="background: #161616; border-radius: 8pt; padding: 16pt;">
+      <p style="font-size: 10pt; color: #EC4899; font-weight: 600; margin-bottom: 8pt;">🍽️ 예약</p>
+      <p style="font-size: 12pt; color: #ffffff; font-weight: 500; margin-bottom: 4pt;">"맛집 예약해줘"</p>
+      <p style="font-size: 10pt; color: #666666;">캐치테이블 · 네이버예약</p>
+    </div>
+
+    <!-- 선물 -->
+    <div style="background: #161616; border-radius: 8pt; padding: 16pt;">
+      <p style="font-size: 10pt; color: #EF4444; font-weight: 600; margin-bottom: 8pt;">🎁 선물</p>
+      <p style="font-size: 12pt; color: #ffffff; font-weight: 500; margin-bottom: 4pt;">"부모님께 과일 보내줘"</p>
+      <p style="font-size: 10pt; color: #666666;">카카오 선물하기 · 쿠팡 · 네이버</p>
     </div>
   </div>
 
-  <!-- 하단 노트 -->
-  <div style="margin-top: 16pt;">
-    <p style="font-size: 10pt; color: #555555;">모든 시나리오는 실제 앱에서 AI 에이전트가 자율적으로 수행한 영상입니다.</p>
+  <!-- 하단 -->
+  <div style="margin-top: 12pt;">
+    <p style="font-size: 10pt; color: #555555;">자연어 입력 → Intent Parsing → 최적 서비스 자동 선택</p>
   </div>
 </body>
 </html>
