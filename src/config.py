@@ -1,22 +1,22 @@
 from pydantic_settings import BaseSettings
-from typing import Optional
 
 
 class Settings(BaseSettings):
     anthropic_api_key: str
-    minitap_api_key: str = ""
 
     coupang_bundle_id: str = "com.coupang.Coupang"
-    baemin_bundle_id: str = "com.woowahan.deliveryapp"
-    coupang_eats_bundle_id: str = "com.coupang.CoupangEats"
+    baemin_bundle_id: str = "com.jawebs.baedal"
+    coupang_eats_bundle_id: str = "com.coupang.coupang-eats"
     kakaot_bundle_id: str = "com.kakao.taxi"
-    naver_bundle_id: str = "com.nhn.NaverSearch"
-    yanolja_bundle_id: str = "com.yanolja.yanoljaapp"
-    catchtable_bundle_id: str = "com.catchtable.catchtable"
-    kakao_bundle_id: str = "com.kakao.talk"
+    naver_bundle_id: str = "com.nhncorp.NaverSearch"
+    yanolja_bundle_id: str = "com.yanolja.motel"
+    catchtable_bundle_id: str = "co.catchtable.m"
+    kakao_bundle_id: str = "com.iwilab.KakaoTalk"
 
-    minitap_max_steps: int = 400
-    minitap_task_interval_seconds: int = 5
+    device_udid: str = "00008120-00064DE22ED1A01E"
+    appium_host: str = "http://127.0.0.1:4723"
+    appium_max_steps: int = 30
+    appium_step_interval: float = 1.0
 
     class Config:
         env_file = ".env"
