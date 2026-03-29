@@ -18,7 +18,7 @@ class Settings(BaseSettings):
 
     # Droidrun / device
     device_serial: str = "emulator-5554"
-    max_steps: int = 30
+    max_steps: int = 50
     vision_enabled: bool = True
     reasoning_enabled: bool = False
     save_trajectory: str = "step"

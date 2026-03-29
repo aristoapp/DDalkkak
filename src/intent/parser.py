@@ -3,6 +3,8 @@ from __future__ import annotations
 from importlib import import_module
 from typing import Any, cast
 
+from src.memory import user_memory
+
 from .schemas import ParsedIntent
 
 _anthropic = import_module("anthropic")
@@ -39,7 +41,7 @@ class IntentParser:
             response = self.client.messages.create(
                 model="claude-sonnet-4-20250514",
                 max_tokens=1024,
-                system=SYSTEM_PROMPT,
+                system=SYSTEM_PROMPT + user_memory.get_profile_prompt(),
                 tools=cast(Any, [PARSE_INTENT_TOOL]),
                 messages=messages,
             )

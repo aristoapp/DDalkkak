@@ -59,10 +59,12 @@ class TravelEntities(BaseModel):
 
 
 class ReservationEntities(BaseModel):
+    cuisine: str | None = None
     service_type: str | None = None
     venue_name: str | None = None
     location: str | None = None
     party_size: int = 1
+    reservation_date: str | None = None
     reservation_time: str | None = None
 
 

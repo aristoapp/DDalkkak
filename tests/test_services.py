@@ -98,12 +98,38 @@ class TestReservationHandlers:
         assert "스시미소" in goal
         assert "취소" in goal
 
+    def test_catchtable_with_cuisine_and_datetime(self) -> None:
+        intent = _make_intent(
+            ServiceCategory.RESERVATION,
+            {"cuisine": "양식", "party_size": 2, "reservation_date": "4월 4일", "reservation_time": "오후 6시"},
+        )
+        handler = CatchtableHandler(agent=None)
+        goal = handler.build_goal(intent)
+        assert "양식 맛집" in goal
+        assert "4월 4일" in goal
+        assert "오후 6시" in goal
+        assert "2명" in goal
+        assert "취소" in goal
+
     def test_naver_reservation_goal(self) -> None:
         intent = _make_intent(ServiceCategory.RESERVATION, {"service_type": "맛집", "location": "강남"})
         handler = NaverReservationHandler(agent=None)
         goal = handler.build_goal(intent)
         assert "맛집" in goal
+        assert "강남" in goal
         assert "취소" in goal
+
+    def test_naver_reservation_with_cuisine(self) -> None:
+        intent = _make_intent(
+            ServiceCategory.RESERVATION,
+            {"cuisine": "일식", "location": "홍대", "party_size": 3, "reservation_date": "금요일"},
+        )
+        handler = NaverReservationHandler(agent=None)
+        goal = handler.build_goal(intent)
+        assert "일식" in goal
+        assert "홍대" in goal
+        assert "3명" in goal
+        assert "금요일" in goal
 
 
 class TestGiftHandler:

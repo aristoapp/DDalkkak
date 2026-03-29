@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 from src.agent.droid_agent import DroidRunAgent
 from src.agent.task_builder import TaskGoalBuilder
 from src.intent.schemas import ParsedIntent
+from src.memory import user_memory
 
 
 class ServiceHandler(ABC):
@@ -19,7 +20,8 @@ class ServiceHandler(ABC):
 
     def get_goal(self, intent: ParsedIntent) -> str:
         """Handler.build_goal() is primary; TaskGoalBuilder is fallback for unhandled services."""
-        return self.build_goal(intent)
+        ctx = user_memory.get_context_for_goal(intent.category)
+        return f"{ctx}{self.build_goal(intent)}".strip()
 
     @staticmethod
     def get_fallback_goal(intent: ParsedIntent) -> str:
