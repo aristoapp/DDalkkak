@@ -43,3 +43,4 @@ traces/
 .idea/
 .vscode/
 uv.lock
+memory.md
